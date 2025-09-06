@@ -14,14 +14,12 @@ pipeline {
                     stage('Run inside Docker') {
                         steps {
                             script {
-                                // Convert Windows path (C:\...) to Git Bash/Docker-friendly path (/c/...)
                                 def winPath = env.WORKSPACE
                                 def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
 
-                                // Run inside Python Docker container
                                 bat """
                                     docker run --rm -v ${linuxPath}:/workspace -w /workspace ^
-                                    python:${PYTHON_VERSION} sh -c "python --version && pip install -r requirements.txt || echo 'No requirements.txt'"
+                                    python:${PYTHON_VERSION} sh -c "python --version && if [ -f requirements.txt ]; then pip install -r requirements.txt; else echo 'No requirements.txt found'; fi"
                                 """
                             }
                         }
@@ -34,9 +32,8 @@ pipeline {
             steps {
                 script {
                     def winPath = env.WORKSPACE
-                    def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
-
-                    bat "docker build -t major_project:latest ${linuxPath}"
+                    // Use Windows path directly for Docker build
+                    bat "docker build -t major_project:latest \"${winPath}\""
                 }
             }
         }
