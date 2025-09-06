@@ -1,37 +1,31 @@
 pipeline {
     agent any
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
 
-        stage('Build') {
-            parallel {
-                stage('Python 3.10') {
-                    agent {
-                        docker {
-                            image 'python:3.10'
-                            // convert Windows C:\... to /c/... for Docker
-                            args '-v /c/ProgramData/Jenkins/.jenkins/workspace/Major_Project:/workspace -w /workspace'
-                        }
-                    }
-                    steps {
-                        sh 'python --version'
-                        sh 'pip install -r requirements.txt || true'
+    stages {
+        stage('Python Matrix Build') {
+            matrix {
+                axes {
+                    axis {
+                        name 'PYTHON_VERSION'
+                        values '3.10', '3.11'
                     }
                 }
-                stage('Python 3.11') {
-                    agent {
-                        docker {
-                            image 'python:3.11'
-                            args '-v /c/ProgramData/Jenkins/.jenkins/workspace/Major_Project:/workspace -w /workspace'
+                stages {
+                    stage('Run inside Docker') {
+                        steps {
+                            script {
+                                // Convert Jenkins Windows workspace path to Linux/WSL format
+                                def winPath = env.WORKSPACE
+                                def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
+
+                                docker.image("python:${PYTHON_VERSION}").inside(
+                                    "-v ${linuxPath}:/workspace -w /workspace"
+                                ) {
+                                    sh 'python --version'
+                                    sh 'pip install -r requirements.txt || echo "No requirements.txt"'
+                                }
+                            }
                         }
-                    }
-                    steps {
-                        sh 'python --version'
-                        sh 'pip install -r requirements.txt || true'
                     }
                 }
             }
@@ -39,13 +33,18 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t major_project:latest .'
+                script {
+                    def winPath = env.WORKSPACE
+                    def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
+
+                    sh "docker build -t major_project:latest ${linuxPath}"
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploy stage (add your deployment commands here)"
+                echo "Deployment step (to be configured)"
             }
         }
     }
