@@ -14,16 +14,17 @@ pipeline {
                     stage('Run inside Docker') {
                         steps {
                             script {
-                                // Convert Jenkins Windows workspace path to Linux/WSL format
+                                // Convert Jenkins Windows path to Linux path for Docker
                                 def winPath = env.WORKSPACE
                                 def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
 
-                                docker.image("python:${PYTHON_VERSION}").inside(
-                                    "-v ${linuxPath}:/workspace -w /workspace"
-                                ) {
-                                    sh 'python --version'
-                                    sh 'pip install -r requirements.txt || echo "No requirements.txt"'
-                                }
+                                sh """
+                                    docker run --rm -v ${linuxPath}:/workspace -w /workspace \
+                                    python:${PYTHON_VERSION} sh -c "
+                                        python --version &&
+                                        pip install -r requirements.txt || echo 'No requirements.txt'
+                                    "
+                                """
                             }
                         }
                     }
