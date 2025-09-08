@@ -28,50 +28,21 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Docker Build & Deploy') {
             steps {
                 script {
                     def winPath = env.WORKSPACE
+                    // Build Docker image
                     bat "docker build -t major_project:latest \"${winPath}\""
-                }
-            }
-        }
 
-        stage('Deploy') {
-            steps {
-                script {
+                    // Stop & remove old containers safely
                     bat """
-                        docker stop major_project_container || echo "No container running"
-                        docker rm major_project_container || echo "No container to remove"
-                        docker run -d -p 8000:8000 --name major_project_container major_project:latest
+                    docker stop major_project_container || echo 'No container running'
+                    docker rm major_project_container || echo 'No container to remove'
                     """
-                }
-            }
-        }
 
-        stage('Deploy in Parallel (Showcase)') {
-            parallel {
-                stage('Deploy Version A') {
-                    steps {
-                        script {
-                            bat """
-                                docker stop app_v1 || echo "Not running"
-                                docker rm app_v1 || echo "Not exist"
-                                docker run -d -p 8001:8000 --name app_v1 major_project:latest
-                            """
-                        }
-                    }
-                }
-                stage('Deploy Version B') {
-                    steps {
-                        script {
-                            bat """
-                                docker stop app_v2 || echo "Not running"
-                                docker rm app_v2 || echo "Not exist"
-                                docker run -d -p 8002:8000 --name app_v2 major_project:latest
-                            """
-                        }
-                    }
+                    // Deploy new container
+                    bat "docker run -d -p 8000:8000 --name major_project_container major_project:latest"
                 }
             }
         }
