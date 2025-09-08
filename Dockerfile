@@ -25,4 +25,5 @@ RUN python manage.py collectstatic --noinput || echo "No static files to collect
 EXPOSE 8000
 
 # Run Gunicorn server
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite_django_project.wsgi:application"]
+
