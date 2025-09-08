@@ -20,6 +20,7 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput || echo "No static files to collect"
 
 # Gunicorn entry point (update wsgi path)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite_django_project.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite_django_project.mysite_django_project.wsgi:application"]
+
 
 
