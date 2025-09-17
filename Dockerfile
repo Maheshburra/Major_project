@@ -1,18 +1,17 @@
-# Use Python image
+# Use Python slim image
 FROM python:3.11-slim
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy requirements first and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy Django project files
+# Copy project files
 COPY . .
 
-# Expose port
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose Django port
 EXPOSE 8000
 
-# Run Gunicorn
+# Run Gunicorn server
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite_django_project.wsgi:application"]
