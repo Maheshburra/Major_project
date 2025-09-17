@@ -1,72 +1,40 @@
 pipeline {
     agent any
-
+    environment {
+        TERRAFORM_DIR = "terraform"
+        DOCKER_IMAGE = "major_project:latest"
+    }
     stages {
-        stage('Python Matrix Build') {
-            matrix {
-                axes {
-                    axis {
-                        name 'PYTHON_VERSION'
-                        values '3.10', '3.11'
-                    }
-                }
-                stages {
-                    stage('Run inside Docker') {
-                        steps {
-                            script {
-                                def winPath = env.WORKSPACE
-                                def linuxPath = winPath.replaceAll('C:', '/c').replaceAll('\\\\', '/')
-
-                                bat """
-                                    docker run --rm -v ${linuxPath}:/workspace -w /workspace ^
-                                    python:${PYTHON_VERSION} sh -c "python --version && if [ -f requirements.txt ]; then pip install -r requirements.txt; else echo 'No requirements.txt found'; fi"
-                                """
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Docker Build') {
+        stage('Terraform Init & Apply') {
             steps {
-                script {
-                    def winPath = env.WORKSPACE
-                    bat "docker build -t major_project:latest \"${winPath}\""
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    // Replace with your Docker Hub username
-                    def dockerUser = "maheshburra1121"
-
-                    bat "docker tag major_project:latest ${dockerUser}/myapp:latest"
-                    bat "docker push ${dockerUser}/myapp:latest"
-                }
+                sh 'docker build -t ${DOCKER_IMAGE} .'
             }
         }
 
-        stage('Parallel Deploy') {
+        stage('Deploy Containers in Parallel') {
             parallel {
-                stage('Deploy App v1') {
+                stage('Container 1') {
                     steps {
-                        bat """
-                        docker stop app_v1 || echo 'No container running'
-                        docker rm app_v1 || echo 'No container to remove'
-                        docker run -d -p 8000:8000 --name app_v1 major_project:latest
-                        """
+                        sh 'terraform apply -target=docker_container.app_instance1 -auto-approve'
                     }
                 }
-                stage('Deploy App v2') {
+                stage('Container 2') {
                     steps {
-                        bat """
-                        docker stop app_v2 || echo 'No container running'
-                        docker rm app_v2 || echo 'No container to remove'
-                        docker run -d -p 8001:8000 --name app_v2 major_project:latest
-                        """
+                        sh 'terraform apply -target=docker_container.app_instance2 -auto-approve'
+                    }
+                }
+                stage('Container 3') {
+                    steps {
+                        sh 'terraform apply -target=docker_container.app_instance3 -auto-approve'
                     }
                 }
             }
