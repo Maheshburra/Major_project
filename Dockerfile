@@ -1,26 +1,22 @@
-# Use official Python image
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libpq-dev gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libpq-dev gcc \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy requirements first for caching
-COPY requirements.txt /app/
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
-COPY . /app/
+COPY . .
 
-# Collect static files (optional)
-RUN python manage.py collectstatic --noinput || echo "No static files to collect"
+# Collect static files (Django)
+RUN python manage.py collectstatic --noinput
 
-# Gunicorn entry point (update wsgi path)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite_django_project.mysite_django_project.wsgi:application"]
-
-
-
+# Expose port and default command
+EXPOSE 8000
+CMD ["gunicorn", "mysite.wsgi:application", "--bind", "0.0.0.0:8000"]
