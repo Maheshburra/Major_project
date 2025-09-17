@@ -41,7 +41,7 @@ pipeline {
             steps {
                 script {
                     // Replace with your Docker Hub username
-                    def dockerUser = "your-dockerhub-username"
+                    def dockerUser = "maheshburra1121"
 
                     bat "docker tag major_project:latest ${dockerUser}/myapp:latest"
                     bat "docker push ${dockerUser}/myapp:latest"
