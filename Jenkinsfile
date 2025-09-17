@@ -28,21 +28,46 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Deploy') {
+        stage('Docker Build') {
             steps {
                 script {
                     def winPath = env.WORKSPACE
-                    // Build Docker image
                     bat "docker build -t major_project:latest \"${winPath}\""
+                }
+            }
+        }
 
-                    // Stop & remove old containers safely
-                    bat """
-                    docker stop major_project_container || echo 'No container running'
-                    docker rm major_project_container || echo 'No container to remove'
-                    """
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    // Replace with your Docker Hub username
+                    def dockerUser = "your-dockerhub-username"
 
-                    // Deploy new container
-                    bat "docker run -d -p 8000:8000 --name major_project_container major_project:latest"
+                    bat "docker tag major_project:latest ${dockerUser}/myapp:latest"
+                    bat "docker push ${dockerUser}/myapp:latest"
+                }
+            }
+        }
+
+        stage('Parallel Deploy') {
+            parallel {
+                stage('Deploy App v1') {
+                    steps {
+                        bat """
+                        docker stop app_v1 || echo 'No container running'
+                        docker rm app_v1 || echo 'No container to remove'
+                        docker run -d -p 8000:8000 --name app_v1 major_project:latest
+                        """
+                    }
+                }
+                stage('Deploy App v2') {
+                    steps {
+                        bat """
+                        docker stop app_v2 || echo 'No container running'
+                        docker rm app_v2 || echo 'No container to remove'
+                        docker run -d -p 8001:8000 --name app_v2 major_project:latest
+                        """
+                    }
                 }
             }
         }
