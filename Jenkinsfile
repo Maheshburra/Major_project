@@ -23,18 +23,17 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir('terraform') {
-                    sh 'terraform init'
+                    bat 'terraform init'
                 }
             }
         }
 
         stage('Clean Up Existing Containers') {
             steps {
-                // Clean up conflicting containers before applying new ones
-                sh '''
-                docker rm -f app_instance1 || true
-                docker rm -f app_instance2 || true
-                docker rm -f app_instance3 || true
+                bat '''
+                docker rm -f app_instance1 || exit 0
+                docker rm -f app_instance2 || exit 0
+                docker rm -f app_instance3 || exit 0
                 '''
             }
         }
@@ -42,14 +41,14 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir('terraform') {
-                    sh 'terraform apply -auto-approve'
+                    bat 'terraform apply -auto-approve'
                 }
             }
         }
 
         stage('Verify Running Containers') {
             steps {
-                sh 'docker ps --filter "name=app_instance"'
+                bat 'docker ps -a'
             }
         }
     }
@@ -66,3 +65,4 @@ pipeline {
         }
     }
 }
+`
