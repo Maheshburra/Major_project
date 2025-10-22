@@ -3,6 +3,8 @@ pipeline {
     environment {
         TERRAFORM_DIR = "terraform"
         DOCKER_IMAGE = "major_project:latest"
+        // Explicit PATH for Git, Terraform, Docker
+        PATH = "C:\\Program Files\\Git\\cmd;C:\\terraform;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
     }
     stages {
 
@@ -74,3 +76,5 @@ pipeline {
         }
     }
 }
+
+
