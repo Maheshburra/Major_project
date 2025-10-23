@@ -1,67 +1,78 @@
 pipeline {
     agent any
-
     environment {
-        IMAGE_NAME = "major_project:latest"
+        TERRAFORM_DIR = "terraform"
+        DOCKER_IMAGE = "major_project:latest"
+        // Explicit PATH for Git, Terraform, Docker
+        PATH = "C:\\Program Files\\Git\\cmd;C:\\terraform;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
     }
-
     stages {
-        stage('Checkout SCM') {
-            steps {
-                checkout scm
-            }
-        }
 
+        // ----------------------
+        // Stage 1: Build Docker
+        // ----------------------
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}")
+                    echo "🚀 Building Docker Image..."
+                    // Enter the Jenkins workspace to ensure Dockerfile is found
+                    dir("${env.WORKSPACE}") {
+                        bat "docker build -t ${env.DOCKER_IMAGE} ."
+                    }
                 }
             }
         }
 
+        // ----------------------
+        // Stage 2: Terraform Init
+        // ----------------------
         stage('Terraform Init') {
             steps {
-                dir('terraform') {
-                    bat 'terraform init'
+                dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                    bat "terraform init"
                 }
             }
         }
 
-        stage('Clean Up Existing Containers') {
-            steps {
-                bat '''
-                docker rm -f app_instance1 || exit 0
-                docker rm -f app_instance2 || exit 0
-                docker rm -f app_instance3 || exit 0
-                '''
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    bat 'terraform apply -auto-approve'
+        // ---------------------------------------------
+        // Stage 3: Deploy Containers in Parallel
+        // ---------------------------------------------
+        stage('Deploy Containers in Parallel') {
+            parallel {
+                stage('Container 1') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance1 -auto-approve"
+                        }
+                    }
                 }
-            }
-        }
-
-        stage('Verify Running Containers') {
-            steps {
-                bat 'docker ps -a'
+                stage('Container 2') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance2 -auto-approve"
+                        }
+                    }
+                }
+                stage('Container 3') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance3 -auto-approve"
+                        }
+                    }
+                }
             }
         }
     }
 
+    // ----------------------
+    // Post Actions
+    // ----------------------
     post {
-        success {
-            echo '✅ Deployment successful!'
+        always {
+            echo "🧹 Cleaning up temporary files..."
         }
         failure {
-            echo '❌ Deployment failed. Please check the logs above.'
-        }
-        always {
-            echo '📦 Pipeline execution completed.'
+            echo "❌ Deployment failed. Check the logs for errors."
         }
     }
 }
