@@ -8,7 +8,6 @@ terraform {
     }
   }
 
-  # Optional: if you plan to use remote state storage (e.g., S3, Azure, etc.), define the backend here.
   # backend "local" {
   #   path = "terraform.tfstate"
   # }
@@ -18,7 +17,7 @@ terraform {
 # Provider Configuration
 # --------------------------------------------------
 provider "docker" {
-  # You can explicitly specify the Docker host if needed.
+  # On Windows, you can optionally specify the host like this:
   # host = "npipe:////./pipe/docker_engine"
 }
 
@@ -43,7 +42,8 @@ resource "docker_container" "app_instance1" {
   }
 
   lifecycle {
-    replace_triggered_by = [docker_image.app_image]
+    replace_triggered_by   = [docker_image.app_image]
+    create_before_destroy  = true  # Prevents missing-image errors
   }
 }
 
@@ -57,7 +57,8 @@ resource "docker_container" "app_instance2" {
   }
 
   lifecycle {
-    replace_triggered_by = [docker_image.app_image]
+    replace_triggered_by   = [docker_image.app_image]
+    create_before_destroy  = true
   }
 }
 
@@ -71,6 +72,7 @@ resource "docker_container" "app_instance3" {
   }
 
   lifecycle {
-    replace_triggered_by = [docker_image.app_image]
+    replace_triggered_by   = [docker_image.app_image]
+    create_before_destroy  = true
   }
 }
