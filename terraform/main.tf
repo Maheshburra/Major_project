@@ -7,26 +7,18 @@ terraform {
       version = "~> 3.0.2"
     }
   }
-
-  # backend "local" {
-  #   path = "terraform.tfstate"
-  # }
 }
 
-# --------------------------------------------------
-# Provider Configuration
-# --------------------------------------------------
 provider "docker" {
-  # On Windows, you can optionally specify the host like this:
+  # For Windows, Docker host works automatically.
   # host = "npipe:////./pipe/docker_engine"
 }
 
 # --------------------------------------------------
-# Docker Image Resource
+# Docker Image (Pulled from Docker Hub)
 # --------------------------------------------------
 resource "docker_image" "app_image" {
-  name         = "major_project:latest"
-  keep_locally = true
+  name = "maheshburra1121/myapp:latest"
 }
 
 # --------------------------------------------------
@@ -40,11 +32,6 @@ resource "docker_container" "app_instance1" {
     internal = 8000
     external = 8001
   }
-
-  lifecycle {
-    replace_triggered_by   = [docker_image.app_image]
-    create_before_destroy  = true  # Prevents missing-image errors
-  }
 }
 
 resource "docker_container" "app_instance2" {
@@ -55,11 +42,6 @@ resource "docker_container" "app_instance2" {
     internal = 8000
     external = 8002
   }
-
-  lifecycle {
-    replace_triggered_by   = [docker_image.app_image]
-    create_before_destroy  = true
-  }
 }
 
 resource "docker_container" "app_instance3" {
@@ -69,10 +51,5 @@ resource "docker_container" "app_instance3" {
   ports {
     internal = 8000
     external = 8003
-  }
-
-  lifecycle {
-    replace_triggered_by   = [docker_image.app_image]
-    create_before_destroy  = true
   }
 }
