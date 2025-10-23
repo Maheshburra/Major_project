@@ -3,18 +3,47 @@ pipeline {
     environment {
         TERRAFORM_DIR = "terraform"
         DOCKER_IMAGE = "major_project:latest"
+        DOCKERHUB_REPO = "maheshburra1121/myapp:latest"
         PATH = "C:\\Program Files\\Git\\cmd;C:\\terraform;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
     }
 
     stages {
+
+        // ----------------------
+        // Stage 1: Build Docker
+        // ----------------------
         stage('Build Docker Image') {
             steps {
-                dir("${env.WORKSPACE}") {
-                    bat "docker build -t ${env.DOCKER_IMAGE} ."
+                script {
+                    echo "🚀 Building Docker Image..."
+                    dir("${env.WORKSPACE}") {
+                        bat "docker build -t ${env.DOCKER_IMAGE} ."
+                    }
                 }
             }
         }
 
+        // ----------------------
+        // Stage 2: Push to Docker Hub
+        // ----------------------
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    echo "📦 Pushing Docker image to Docker Hub..."
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat """
+                        docker login -u %DOCKER_USER% -p %DOCKER_PASS%
+                        docker tag ${env.DOCKER_IMAGE} ${env.DOCKERHUB_REPO}
+                        docker push ${env.DOCKERHUB_REPO}
+                        """
+                    }
+                }
+            }
+        }
+
+        // ----------------------
+        // Stage 3: Terraform Init
+        // ----------------------
         stage('Terraform Init') {
             steps {
                 dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
@@ -23,20 +52,31 @@ pipeline {
             }
         }
 
-        stage('Clean Old Containers') {
-            steps {
-                bat '''
-                docker rm -f app_instance1 || exit /b 0
-                docker rm -f app_instance2 || exit /b 0
-                docker rm -f app_instance3 || exit /b 0
-                '''
-            }
-        }
-
-        stage('Deploy Containers') {
-            steps {
-                dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                    bat "terraform apply -auto-approve"
+        // ---------------------------------------------
+        // Stage 4: Deploy Containers in Parallel
+        // ---------------------------------------------
+        stage('Deploy Containers in Parallel') {
+            parallel {
+                stage('Container 1') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance1 -auto-approve"
+                        }
+                    }
+                }
+                stage('Container 2') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance2 -auto-approve"
+                        }
+                    }
+                }
+                stage('Container 3') {
+                    steps {
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance3 -auto-approve"
+                        }
+                    }
                 }
             }
         }
