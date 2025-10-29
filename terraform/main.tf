@@ -1,13 +1,9 @@
 terraform {
   required_version = ">= 1.5.0"
 
-  # 👇 Add this backend block for Terraform Cloud
-  backend "remote" {
-    organization = "maheshburra-org"  # <-- replace with your Terraform Cloud org name
-
-    workspaces {
-      name = "major_project"           # <-- replace with your workspace name
-    }
+  # 👇 Use local backend, NOT remote operations
+  backend "local" {
+    path = "terraform.tfstate"
   }
 
   required_providers {
