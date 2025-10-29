@@ -37,10 +37,8 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
-                    dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                        bat "terraform init -input=false"
-                    }
+                dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                    bat "terraform init -input=false"
                 }
             }
         }
@@ -49,28 +47,22 @@ pipeline {
             parallel {
                 stage('Container 1') {
                     steps {
-                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
-                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                                bat "terraform apply -target=docker_container.app_instance1 -auto-approve -input=false"
-                            }
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance1 -auto-approve -input=false"
                         }
                     }
                 }
                 stage('Container 2') {
                     steps {
-                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
-                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                                bat "terraform apply -target=docker_container.app_instance2 -auto-approve -input=false"
-                            }
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance2 -auto-approve -input=false"
                         }
                     }
                 }
                 stage('Container 3') {
                     steps {
-                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
-                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                                bat "terraform apply -target=docker_container.app_instance3 -auto-approve -input=false"
-                            }
+                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                            bat "terraform apply -target=docker_container.app_instance3 -auto-approve -input=false"
                         }
                     }
                 }
