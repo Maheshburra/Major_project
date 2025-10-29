@@ -9,9 +9,6 @@ pipeline {
 
     stages {
 
-        // ----------------------
-        // Stage 1: Build Docker
-        // ----------------------
         stage('Build Docker Image') {
             steps {
                 script {
@@ -23,9 +20,6 @@ pipeline {
             }
         }
 
-        // ----------------------
-        // Stage 2: Push to Docker Hub
-        // ----------------------
         stage('Push to Docker Hub') {
             steps {
                 script {
@@ -41,40 +35,42 @@ pipeline {
             }
         }
 
-        // ----------------------
-        // Stage 3: Terraform Init
-        // ----------------------
         stage('Terraform Init') {
             steps {
-                dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                    bat "terraform init"
+                withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
+                    dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                        bat "terraform init"
+                    }
                 }
             }
         }
 
-        // ---------------------------------------------
-        // Stage 4: Deploy Containers in Parallel
-        // ---------------------------------------------
         stage('Deploy Containers in Parallel') {
             parallel {
                 stage('Container 1') {
                     steps {
-                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                            bat "terraform apply -target=docker_container.app_instance1 -auto-approve"
+                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
+                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                                bat "terraform apply -target=docker_container.app_instance1 -auto-approve"
+                            }
                         }
                     }
                 }
                 stage('Container 2') {
                     steps {
-                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                            bat "terraform apply -target=docker_container.app_instance2 -auto-approve"
+                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
+                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                                bat "terraform apply -target=docker_container.app_instance2 -auto-approve"
+                            }
                         }
                     }
                 }
                 stage('Container 3') {
                     steps {
-                        dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                            bat "terraform apply -target=docker_container.app_instance3 -auto-approve"
+                        withCredentials([string(credentialsId: 'TERRAFORM_CLOUD_TOKEN', variable: 'TF_TOKEN_app_terraform_io')]) {
+                            dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
+                                bat "terraform apply -target=docker_container.app_instance3 -auto-approve"
+                            }
                         }
                     }
                 }
