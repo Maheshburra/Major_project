@@ -22,7 +22,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir("${env.WORKSPACE}\\${env.TERRAFORM_DIR}") {
-                    bat "terraform init -migrate-state -input=false"
+                    bat "terraform init -reconfigure -input=false"
                 }
             }
         }
