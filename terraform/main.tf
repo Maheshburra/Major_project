@@ -16,14 +16,14 @@ terraform {
 
 provider "docker" {
   # For Windows, Docker host works automatically.
-  # host = "npipe:////./pipe/docker_engine"
 }
 
 # --------------------------------------------------
-# Docker Image (Pulled from Docker Hub)
+# Docker Image (Use locally built image)
 # --------------------------------------------------
 resource "docker_image" "app_image" {
-  name = "maheshburra1121/myapp:latest"
+  name         = "major_project:latest"
+  keep_locally = true
 }
 
 # --------------------------------------------------
